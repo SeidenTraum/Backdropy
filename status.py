@@ -40,7 +40,7 @@ class Status:
         @staticmethod
         def debug(msg: str) -> int:
             """Print a debug message."""
-            if debug:
+            if Status.debug:
                 print(f"{Status.Colors.PURPLE}[DEBUG]{Status.Colors.RESET} {msg}")
             return 0
 
