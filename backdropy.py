@@ -5,9 +5,66 @@ from typing import Dict, Union
 import json
 
 global config_path
+global debug
 config_path:str = "bdy.config"
+debug:bool = True
 
-class JsonParser:
+class status:
+    # Methods related to status messages
+    class colors:
+        # Color ANSI codes
+        red:str     = "\033[91m"
+        green:str   = "\033[92m"
+        yellow:str  = "\033[93m"
+        blue:str    = "\033[94m"
+        purple:str  = "\033[95m"
+        reset:str   = "\033[0m"
+
+    class messages:
+        @staticmethod
+        def info(msg:str) -> int:
+            """Print an info message."""
+            print(f"{status.colors.blue}[INFO]{status.colors.reset} {msg}")
+            return 0
+
+        @staticmethod
+        def warning(msg:str) -> int:
+            """Print a warning message."""
+            print(f"{status.colors.yellow}[WARNING]{status.colors.reset} {msg}")
+            return 0
+
+        @staticmethod
+        def error(msg:str, errc:str=None) -> int:
+            """Print an error message."""
+            print(f"{status.colors.red}[ERROR]{status.colors.reset} {msg}")
+            if errc:
+                print(f"{status.colors.yellow}[ERRC]{status.colors.reset} {errc}")
+            return 0
+
+        @staticmethod
+        def success(msg:str) -> int:
+            """Print a success message."""
+            print(f"{status.colors.green}[SUCCESS]{status.colors.reset} {msg}")
+            return 0
+
+        @staticmethod
+        def debug(msg:str) -> int:
+            """Print a debug message."""
+            if debug:
+                print(f"{status.colors.purple}[DEBUG]{status.colors.reset} {msg}")
+            return 0
+
+    class prompt:
+        @staticmethod
+        def input(msg:str, exp:str=any) -> Union[any, int]:
+            """Print a prompt and return the input.
+            args:
+                msg:str - The message to print
+                exp:str - The expected input type
+            """
+            return input(f"{status.colors.blue}[PROMPT]{status.colors.reset} {msg}{status.colors.green}")
+
+class jsonParser:
     """Functions related to parsing JSON files."""
 
     @staticmethod
