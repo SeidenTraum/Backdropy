@@ -100,13 +100,13 @@ class jsonParser:
     @staticmethod
     def getKey(filePath: str, key: str) -> str:
         """Get a key from a JSON file."""
-        data = JsonParser.readFile(filePath)
+        data = jsonParser.readFile(filePath)
         return data.get(key)
 
     @staticmethod
     def deleteKey(filePath: str, key: str) -> Union[Dict, int]:
         """Delete a key from a JSON file."""
-        data = JsonParser.readFile(filePath)
+        data = jsonParser.readFile(filePath)
         if key in data:
             del data[key]
             return data
@@ -117,9 +117,9 @@ class jsonParser:
     @staticmethod
     def addKey(filePath: str, key: str, value: str) -> Dict:
         """Add a key to a JSON file."""
-        data = JsonParser.readFile(filePath)
+        data = jsonParser.readFile(filePath)
         data[key] = value
-        JsonParser.writeFile(filePath, data)
+        jsonParser.writeFile(filePath, data)
         return data
 
 def config_set_default() -> int:
@@ -168,7 +168,7 @@ def config_set_default() -> int:
 
     # Writing the config in Json format
     try:
-        JsonParser.writeFile(config_path, default)
+        jsonParser.writeFile(config_path, default)
     except Exception as e:
         print(f"Error writing to file: {config_path}") # Catch all case
         return 1
