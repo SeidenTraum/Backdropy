@@ -2,58 +2,14 @@
 License: GPLv3
 """
 from typing import Dict, Union
+from status import Status
 import json
 import os
 
-class Status:
-    # Color ANSI codes
-    class Colors:
-        RED = "\033[91m"
-        GREEN = "\033[92m"
-        YELLOW = "\033[93m"
-        BLUE = "\033[94m"
-        PURPLE = "\033[95m"
-        RESET = "\033[0m"
-
-    class Messages:
-        @staticmethod
-        def info(msg: str) -> int:
-            """Print an info message."""
-            print(f"{Status.Colors.BLUE}[INFO]{Status.Colors.RESET} {msg}")
-            return 0
-
-        @staticmethod
-        def warning(msg: str) -> int:
-            """Print a warning message."""
-            print(f"{Status.Colors.YELLOW}[WARNING]{Status.Colors.RESET} {msg}")
-            return 0
-
-        @staticmethod
-        def error(msg: str, errc: str = None) -> int:
-            """Print an error message."""
-            print(f"{Status.Colors.RED}[ERROR]{Status.Colors.RESET} {msg}")
-            if errc:
-                print(f"{Status.Colors.YELLOW}[ERRC]{Status.Colors.RESET} {errc}")
-            return 0
-
-        @staticmethod
-        def success(msg: str) -> int:
-            """Print a success message."""
-            print(f"{Status.Colors.GREEN}[SUCCESS]{Status.Colors.RESET} {msg}")
-            return 0
-
-        @staticmethod
-        def debug(msg: str, debug: bool) -> int:
-            """Print a debug message."""
-            if debug:
-                print(f"{Status.Colors.PURPLE}[DEBUG]{Status.Colors.RESET} {msg}")
-            return 0
-
-    class Prompt:
-        @staticmethod
-        def input(msg: str) -> str:
-            """Print a prompt and return the input."""
-            return input(f"{Status.Colors.BLUE}[PROMPT]{Status.Colors.RESET} {msg}{Status.Colors.GREEN}")
+class Config:
+    """Holds attributes and methods for the config."""
+    path: str = "bdy.json"
+    debug: bool = True
 
 class JSONParser:
     """Functions related to parsing JSON files."""
@@ -118,10 +74,6 @@ class JSONParser:
 
 class Backdrop:
     """Holds methods for the backdrop script"""
-    def __init__(self):
-        self.config_path: str = "bdy.json"
-        self.debug: bool = True
-
     class Wallpaper:
         """Holds attributes for the wallpaper."""
         def __init__(self):
@@ -129,6 +81,14 @@ class Backdrop:
             self.tags: list[str] = None
             self.dir: str = None
             self.ext: str = None
+
+            self.cmd: str = None
+
+        def set_wallpaper(self, wallpaper: str) -> int:
+            """Set the wallpaper."""
+            # Very simple implementation
+            Backdrop.run_process(f"{self.cmd} {wallpaper}")
+            return 0
 
     class Notifications:
         """Holds attributes and methods for the notifications."""
@@ -150,7 +110,8 @@ class Backdrop:
             self.toggle: bool = None
             self.cmd: str = None
 
-    def run_process(self, cmd: str) -> int:
+    @staticmethod
+    def run_process(cmd: str) -> int:
         """Run a process."""
         try:
             os.system(cmd)
@@ -214,34 +175,43 @@ class Backdrop:
 
 def main() -> int:
     """Main function."""
-    backdrop = Backdrop()
 
+    # Initialization
     # Checking if bdy.json exists
-    if not os.path.exists(backdrop.config_path):
-        tmp = Status.Prompt.input(f"Config file not found at {backdrop.config_path}, create it? (y/n): ")
+    if not os.path.exists(Config.path):
+        tmp = Status.Prompt.input(f"Config file not found at {Config.path}, create it? (y/n): ")
         if tmp.lower() in ["y", "yes", "s", "sim", "si", "j", "ja"]:
             Status.Messages.info("Creating config file...")
-            backdrop.set_default_config()
+            Backdrop.set_default_config()
             Status.Messages.success("Config file created successfully.")
         elif tmp.lower() in ["n", "no", "não", "nao", "nein"]:
-            Status.Messages.error(f"Config file not found at {backdrop.config_path}, exiting...")
+            Status.Messages.error(f"Config file not found at {Config.path}, exiting...")
             return 1
         else:
             Status.Messages.error("Invalid input, exiting...")
             return 1
     # Checking if the file is empty
-    elif os.stat(backdrop.config_path).st_size == 0:
+    elif os.stat(Config.path).st_size == 0:
         tmp = Status.Prompt.input("Config file is empty, create it? (y/n): ")
         if tmp.lower() in ["y", "yes", "s", "sim", "si", "j", "ja"]:
             Status.Messages.info("Creating config file...")
-            backdrop.set_default_config()
+            Backdrop.set_default_config()
             Status.Messages.success("Config file created successfully.")
         elif tmp.lower() in ["n", "no", "não", "nao", "nein"]:
             Status.Messages.error("Config file not found, exiting...")
             return 1
     else:
-        Status.Messages.debug("Config file found.", backdrop.debug)
-    return 0
+        Status.Messages.debug("Config file found.")
+
+    # Running swaybg
+    Backdrop.Wallpaper.cmd = "swaybg --mode fill -i"
+    Backdrop.Wallpaper.dir = "/home/$USER/Pictures/Wallpapers"
+
+    # Debug
+    Status.Messages.debug(f"Running swaybg with cmd: {Backdrop.Wallpaper.cmd}")
+
+    #Backdrop.Wallpaper.set_wallpaper(f"{Backdrop.Wallpaper.dir}/current")
 
 if __name__ == "__main__":
     main()
+
