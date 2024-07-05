@@ -2,7 +2,7 @@
 License: GPLv3
 """
 from typing import Dict, Union
-from status import Status
+import logging
 import json
 import os
 
@@ -10,6 +10,42 @@ class Config:
     """Holds attributes and methods for the config."""
     path: str = "bdy.json"
     debug: bool = True
+class Log:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    def configure_logging(self):
+        logging.basicConfig(
+            level=logging.DEBUG,  # Set the default logging level
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler("log/backdropy.log"),
+                logging.StreamHandler()
+            ]
+        )
+
+    def info(self, msg: str) -> int:
+        self.logger.info(msg)
+        return 0
+
+    def warning(self, msg: str) -> int:
+        self.logger.warning(msg)
+        return 0
+
+    def error(self, msg: str, errc: str = None) -> int:
+        if errc:
+            self.logger.error(f"{msg} - {errc}")
+        else:
+            self.logger.error(msg)
+        return 0
+
+    def success(self, msg: str) -> int:
+        self.logger.info(f"[SUCCESS] {msg}")
+        return 0
+
+    def debug(self, msg: str) -> int:
+        self.logger.debug(msg)
+        return 0
 
 class JSONParser:
     """Functions related to parsing JSON files."""
@@ -21,10 +57,10 @@ class JSONParser:
             with open(file_path, "r") as file:
                 return json.load(file)
         except FileNotFoundError:
-            Status.Messages.error(f"File not found: {file_path}")
+            Log.error(f"File not found: {file_path}")
             return 1
         except json.JSONDecodeError:
-            Status.Messages.error(f"Error decoding JSON from file: {file_path}")
+            Log.error(f"Error decoding JSON from file: {file_path}")
             return 1
 
     @staticmethod
@@ -35,7 +71,7 @@ class JSONParser:
                 json.dump(data, file, indent=4)
             return 0
         except Exception as e:
-            Status.Messages.error(f"Error writing to file: {file_path}", str(e))
+            Log.error(f"Error writing to file: {file_path}", str(e))
             return 1
 
     @staticmethod
@@ -59,7 +95,7 @@ class JSONParser:
         if isinstance(data, Dict) and key in data:
             del data[key]
             return data
-        Status.Messages.error(f"Key '{key}' not found in the file.")
+        Log.error(f"Key '{key}' not found in the file.")
         return 1
 
     @staticmethod
@@ -103,6 +139,35 @@ class Backdrop:
             self.enable: bool = None
             self.file: str = None
             self.level: str = None
+            self.logger = logging.getLogger(__name__)
+
+        def init_logging(self) -> int:
+            """Initialize the logging."""
+            logging.basicConfig(filename=self.file, level=self.level, encoding="utf-8")
+            # Creating the log file if it doesn't exist
+            if not os.path.exists(self.file):
+                Log.debug(f"Log file not found\nCreating log file at {self.file}")
+                os.makedirs(os.path.dirname(self.file), exist_ok=True)
+                with open(self.file, "w") as file:
+                    Log.debug(f"Log file with success")
+                    file.write("") # Writing nothing to it
+                    return 0
+            else:
+                Log.debug(f"Log file found at {self.file}")
+            return 0
+
+        def write(self, message: str, level: str) -> int:
+            """Writes a message to the log file."""
+            match level:
+                case "DEBUG":
+                    self.logger.Log.debug(message)
+                case "INFO":
+                    self.logger.Log.info(message)
+                case "WARNING":
+                    self.logger.warning(message)
+                case "ERROR":
+                    self.logger.Log.error(message)
+            return 0
 
     class FuzzySearch:
         """Holds attributes and methods for the fuzzy search."""
@@ -117,7 +182,7 @@ class Backdrop:
             os.system(cmd)
             return 0
         except Exception as e:
-            Status.Messages.error(f"Error running process: {cmd}", str(e))
+            Log.error(f"Error running process: {cmd}", str(e))
             return 1
 
     def set_default_config(self) -> int:
@@ -159,8 +224,8 @@ class Backdrop:
             },
             "logging": {
                 "enable": True,  # Changes whether logging is enabled
-                "file": "/var/log/backdropy.log",  # The file to log to
-                "level": "info",  # The level of logging
+                "file": "log/backdropy.log",  # The file to log to
+                "level": "INFO",  # The level of logging
             }
         }
 
@@ -168,7 +233,7 @@ class Backdrop:
         try:
             JSONParser.write_file(self.config_path, default)
         except Exception as e:
-            Status.Messages.error(f"Error writing to file: {self.config_path}", str(e))
+            Log.error(f"Error writing to file: {self.config_path}", str(e))
             return 1
 
         return 0
@@ -179,38 +244,43 @@ def main() -> int:
     # Initialization
     # Checking if bdy.json exists
     if not os.path.exists(Config.path):
-        tmp = Status.Prompt.input(f"Config file not found at {Config.path}, create it? (y/n): ")
+        tmp = prompt(f"Config file not found at {Config.path}, create it? (y/n): ")
         if tmp.lower() in ["y", "yes", "s", "sim", "si", "j", "ja"]:
-            Status.Messages.info("Creating config file...")
+            Log.info("Creating config file...")
             Backdrop.set_default_config()
-            Status.Messages.success("Config file created successfully.")
+            Log.success("Config file created successfully.")
         elif tmp.lower() in ["n", "no", "não", "nao", "nein"]:
-            Status.Messages.error(f"Config file not found at {Config.path}, exiting...")
+            Log.error(f"Config file not found at {Config.path}, exiting...")
             return 1
         else:
-            Status.Messages.error("Invalid input, exiting...")
+            Log.error("Invalid input, exiting...")
             return 1
     # Checking if the file is empty
     elif os.stat(Config.path).st_size == 0:
         tmp = Status.Prompt.input("Config file is empty, create it? (y/n): ")
         if tmp.lower() in ["y", "yes", "s", "sim", "si", "j", "ja"]:
-            Status.Messages.info("Creating config file...")
+            Log.info("Creating config file...")
             Backdrop.set_default_config()
-            Status.Messages.success("Config file created successfully.")
+            Log.success("Config file created successfully.")
         elif tmp.lower() in ["n", "no", "não", "nao", "nein"]:
-            Status.Messages.error("Config file not found, exiting...")
+            Log.error("Config file not found, exiting...")
             return 1
     else:
-        Status.Messages.debug("Config file found.")
+        Log.debug("Config file found.")
 
-    # Running swaybg
-    Backdrop.Wallpaper.cmd = "swaybg --mode fill -i"
-    Backdrop.Wallpaper.dir = "/home/$USER/Pictures/Wallpapers"
+    # Setting up the notifications attributes
+    notifications = Backdrop.Notifications()
+    notifications.toggle = config["notifications"]["toggle"]
+    notifications.interval = config["notifications"]["interval"]
+    notifications.cmd = config["notifications"]["cmd"]
 
-    # Debug
-    Status.Messages.debug(f"Running swaybg with cmd: {Backdrop.Wallpaper.cmd}")
-
-    #Backdrop.Wallpaper.set_wallpaper(f"{Backdrop.Wallpaper.dir}/current")
+    # Setting up the logging attributes and initializing the logging
+    logging = Backdrop.Logging()
+    logging.enable = config["logging"]["enable"]
+    logging.file = config["logging"]["file"]
+    logging.level = config["logging"]["level"].upper() # Converting the level to uppercase
+    # 'cause logging requires it
+    logging.init_logging()
 
 if __name__ == "__main__":
     main()
