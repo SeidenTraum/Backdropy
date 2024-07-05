@@ -1,4 +1,6 @@
 class Status:
+    debug: bool = True
+
     # Color ANSI codes
     class Colors:
         RED = "\033[91m"
@@ -38,7 +40,7 @@ class Status:
         @staticmethod
         def debug(msg: str) -> int:
             """Print a debug message."""
-            if Config.debug:
+            if debug:
                 print(f"{Status.Colors.PURPLE}[DEBUG]{Status.Colors.RESET} {msg}")
             return 0
 
