@@ -3,6 +3,7 @@ License: GPLv3
 """
 from typing import Dict, Union
 import logging
+import argparse
 import json
 import os
 
@@ -120,10 +121,10 @@ class Backdrop:
 
             self.cmd: str = None
 
-        def set_wallpaper(self, wallpaper: str) -> int:
+        def set_wallpaper(self) -> int:
             """Set the wallpaper."""
             # Very simple implementation
-            Backdrop.run_process(f"{self.cmd} {wallpaper}")
+            Backdrop.run_process(f"{self.cmd} {self.dir}")
             return 0
 
     class Notifications:
@@ -132,6 +133,11 @@ class Backdrop:
             self.toggle: bool = None
             self.interval: int = None
             self.cmd: str = None
+
+        def notify(self, message: str) -> int:
+            """Send a notification."""
+            Backdrop.run_process(f"{self.cmd} {message}")
+            return 0
 
     class Logging:
         """Holds attributes and methods for the logging."""
@@ -238,6 +244,25 @@ class Backdrop:
 
         return 0
 
+    def set_arguments(self) -> argparse.Namespace:
+        """Set the arguments."""
+        parser = argparse.ArgumentParser(description="Backdrop is a supplement to wallpaper managers like swaybg, nitrogen, etc.")
+
+        parser.add_argument(
+            "-s",
+            "--set",
+            type=str,
+            help="Set the wallpaper"
+        )
+
+        return parser.parse_args()
+
+def prompt(msg: str) -> str:
+    """Prompt the user for input."""
+    BLUE: str = "\033[94m"
+    NC: str = "\033[0m"
+    return input(f"{BLUE}{msg}{NC}")
+
 def main() -> int:
     """Main function."""
 
@@ -257,7 +282,7 @@ def main() -> int:
             return 1
     # Checking if the file is empty
     elif os.stat(Config.path).st_size == 0:
-        tmp = Status.Prompt.input("Config file is empty, create it? (y/n): ")
+        tmp = prompt("Config file is empty, create it? (y/n): ")
         if tmp.lower() in ["y", "yes", "s", "sim", "si", "j", "ja"]:
             Log.info("Creating config file...")
             Backdrop.set_default_config()
@@ -267,6 +292,14 @@ def main() -> int:
             return 1
     else:
         Log.debug("Config file found.")
+
+    # Parsing config and setting up variables
+    config = JSONParser.read_file(Config.path)
+
+    # Setting up the wallpaper attributes
+    wallpaper = Backdrop.Wallpaper()
+    wallpaper.dir = config["wallpaper"]["dir"]
+    wallpaper.cmd = config["wallpaper"]["cmd"]
 
     # Setting up the notifications attributes
     notifications = Backdrop.Notifications()
@@ -281,6 +314,27 @@ def main() -> int:
     logging.level = config["logging"]["level"].upper() # Converting the level to uppercase
     # 'cause logging requires it
     logging.init_logging()
+
+    # Testing
+    logging.write("Testing logging", "DEBUG")
+    logging.write("Testing logging", "INFO")
+    logging.write("Testing logging", "WARNING")
+    logging.write("Testing logging", "ERROR")
+
+    # Setting up the fuzzy search attributes
+    fuzzy_search = Backdrop.FuzzySearch()
+    fuzzy_search.toggle = config["wallpaper"]["fzf"]["toggle"]
+    fuzzy_search.cmd = config["wallpaper"]["fzf"]["cmd"]
+
+    # Initializing the arguments
+    # args = Backdrop.set_arguments()
+
+    # Initial setup done
+
+    # Checking if the set argument is present
+    #if args.set:
+    #    Status.Messages.Log.debug(f"Setting wallpaper to: {args.set}")
+    #    logging.write(f"Wallpaper set to: {args.set}", "DEBUG")
 
 if __name__ == "__main__":
     main()
