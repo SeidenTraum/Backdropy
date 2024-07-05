@@ -35,7 +35,7 @@
     },
     "logging": {
         "enable": true,
-        "file": "/var/log/backdropy.log",
-        "level": "info"
+        "file": "log/backdropy.log",
+        "level": "debug"
     }
 }
