@@ -272,6 +272,9 @@ def prompt(msg: str) -> str:
 
 def main() -> int:
     """Main function."""
+    wallpaper = Backdrop.Wallpaper()
+    notifications = Backdrop.Notifications()
+    fuzzy_search = Backdrop.FuzzySearch()
 
     # Initialization
     # Checking if bdy.json exists
@@ -309,32 +312,29 @@ def main() -> int:
     wallpaper.cmd = config["wallpaper"]["cmd"]
 
     # Setting up the notifications attributes
-    notifications = Backdrop.Notifications()
     notifications.toggle = config["notifications"]["toggle"]
     notifications.interval = config["notifications"]["interval"]
     notifications.cmd = config["notifications"]["cmd"]
 
     # Setting up the logging attributes and initializing the logging
-    logging = Backdrop.Logging()
-    logging.enable = config["logging"]["enable"]
-    logging.file = config["logging"]["file"]
-    logging.level = config["logging"]["level"].upper() # Converting the level to uppercase
-    # 'cause logging requires it
-    logging.init_logging()
+    Log.configure_logging(
+        config["logging"]["enable"],
+        config["logging"]["file"],
+        config["logging"]["level"].upper()
+    )
 
     # Testing
-    logging.write("Testing logging", "DEBUG")
-    logging.write("Testing logging", "INFO")
-    logging.write("Testing logging", "WARNING")
-    logging.write("Testing logging", "ERROR")
+    Log.debug("Testing logging")
+    Log.info("Testing logging")
+    Log.warning("Testing logging")
+    Log.error("Testing logging")
 
     # Setting up the fuzzy search attributes
-    fuzzy_search = Backdrop.FuzzySearch()
     fuzzy_search.toggle = config["wallpaper"]["fzf"]["toggle"]
     fuzzy_search.cmd = config["wallpaper"]["fzf"]["cmd"]
 
     # Initializing the arguments
-    # args = Backdrop.set_arguments()
+    args = Backdrop.set_arguments()
 
     # Initial setup done
 
