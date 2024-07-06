@@ -216,60 +216,8 @@ class Backdrop:
             Log.error(f"Error running process: {cmd}", str(e))
             return 1
 
-    def set_default_config(self) -> int:
-        """Writes the default config file."""
-        default: Dict = {
-            "wallpaper": {
-                "dir": "/home/$USER/Pictures/Wallpapers",  # Directory to search for wallpapers
-                "current": "/home/$USER/Pictures/Wallpapers/current",  # Current wallpaper
-                "ext": ".jpg",  # File extension of wallpapers
-                "cmd": "swaybg -i",  # Command to set the wallpaper
-                "auto_change": {
-                    "toggle": False,  # Changes whether or not the wallpaper is changed automatically
-                    "interval": 300,  # The interval of changing the wallpaper
-                    "list": [],  # A list of wallpapers to change to
-                    "random": True,  # Changes whether or not the wallpaper is chosen randomly
-                },
-                "fzf": {
-                    "toggle": False,  # Changes whether or not fzf is used to select the wallpaper
-                    "cmd": "fzf",  # The command to use to select the wallpaper
-                },
-                "wofi": {
-                    "toggle": False,  # Changes whether or not wofi is used to select the wallpaper
-                },
-                "rofi": {
-                    "toggle": False,  # Changes whether or not rofi is used to select the wallpaper
-                },
-                "dmenu": {
-                    "toggle": False,  # Changes whether or not dmenu is used to select the wallpaper
-                },
-            },
-            "notifications": {
-                "toggle": True,  # Changes whether notifications are shown at all
-                "interval": 300,  # The interval of showing the notification
-                "cmd": "notify-send",  # The command to show the notification
-                "wallpaper_change": True,  # Notify when the wallpaper is changed
-                "wallpaper_error": True,  # Notify when the wallpaper is not found
-                "wallpaper_add": True,  # Notify when a wallpaper is added
-                "wallpaper_remove": True,  # Notify when a wallpaper is removed
-            },
-            "logging": {
-                "enable": True,  # Changes whether logging is enabled
-                "file": "log/backdropy.log",  # The file to log to
-                "level": "INFO",  # The level of logging
-            }
-        }
-
-        # Writing the config in JSON format
-        try:
-            JSONParser.write_file(self.config_path, default)
-        except Exception as e:
-            Log.error(f"Error writing to file: {self.config_path}", str(e))
-            return 1
-
-        return 0
-
-    def set_arguments(self) -> argparse.Namespace:
+    @staticmethod
+    def set_arguments() -> argparse.Namespace:
         """Set the arguments."""
         parser = argparse.ArgumentParser(description="Backdrop is a supplement to wallpaper managers like swaybg, nitrogen, etc.")
 
