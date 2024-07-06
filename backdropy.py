@@ -216,7 +216,41 @@ class Backdrop:
             "-s",
             "--set",
             type=str,
+            nargs=1,
+            action="store",
             help="Set the wallpaper"
+        )
+
+        parser.add_argument(
+            "-r",
+            "--random",
+            action="store_true",
+            help="Randomly select a wallpaper"
+        )
+
+        parser.add_argument(
+            "-l",
+            "--list",
+            action="store_true",
+            help="List all wallpapers"
+        )
+
+        parser.add_argument(
+            "-a",
+            "--add",
+            type=str,
+            nargs="+", # Allows for multiple wallpapers to be added
+            action="store",
+            help="Add wallpaper(s) to the list"
+        )
+
+        parser.add_argument(
+            "-r",
+            "--remove",
+            type=str,
+            nargs="+", # Allows for multiple wallpapers to be removed
+            action="store",
+            help="Remove wallpaper(s) from the list"
         )
 
         return parser.parse_args()
