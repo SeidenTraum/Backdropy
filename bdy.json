@@ -1,7 +1,7 @@
 {
     "wallpaper": {
-        "dir": "/home/$USER/Pictures/Wallpapers",
-        "current": "/home/$USER/Pictures/Wallpapers/current",
+        "dir": "~/Pictures/Wallpapers/",
+        "current": "~/Pictures/Wallpapers/current",
         "ext": ".jpg",
         "cmd": "swaybg -i",
         "auto_change": {
