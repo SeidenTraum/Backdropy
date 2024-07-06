@@ -12,36 +12,46 @@ class Config:
     path: str = "bdy.json"
     debug: bool = True
 class Log:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
 
-    def configure_logging(self):
-        logging.basicConfig(
-            level=logging.DEBUG,  # Set the default logging level
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler("log/backdropy.log"),
-                logging.StreamHandler()
-            ]
-        )
+    @staticmethod
+    def configure_logging(enable: bool, file: str, level: str):
+        if enable:
+            logging.basicConfig(
+                level=level,
+                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(file),
+                    logging.StreamHandler()
+                ]
+            )
 
-    def info(self, msg: str) -> int:
-        self.logger.info(msg)
+    @staticmethod
+    def info(msg: str) -> int:
+        Log.logger.info(msg)
         return 0
 
-    def warning(self, msg: str) -> int:
-        self.logger.warning(msg)
+    @staticmethod
+    def warning(msg: str) -> int:
+        Log.logger.warning(msg)
         return 0
 
-    def error(self, msg: str, errc: str = None) -> int:
+    @staticmethod
+    def error(msg: str, errc: str = None) -> int:
         if errc:
-            self.logger.error(f"{msg} - {errc}")
+            Log.logger.error(f"{msg} - {errc}")
         else:
-            self.logger.error(msg)
+            Log.logger.error(msg)
         return 0
 
-    def success(self, msg: str) -> int:
-        self.logger.info(f"[SUCCESS] {msg}")
+    @staticmethod
+    def success(msg: str) -> int:
+        Log.logger.info(f"[SUCCESS] {msg}")
+        return 0
+
+    @staticmethod
+    def debug(msg: str) -> int:
+        Log.logger.debug(msg)
         return 0
 
     def debug(self, msg: str) -> int:
