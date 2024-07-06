@@ -139,42 +139,6 @@ class Backdrop:
             Backdrop.run_process(f"{self.cmd} {message}")
             return 0
 
-    class Logging:
-        """Holds attributes and methods for the logging."""
-        def __init__(self):
-            self.enable: bool = None
-            self.file: str = None
-            self.level: str = None
-            self.logger = logging.getLogger(__name__)
-
-        def init_logging(self) -> int:
-            """Initialize the logging."""
-            logging.basicConfig(filename=self.file, level=self.level, encoding="utf-8")
-            # Creating the log file if it doesn't exist
-            if not os.path.exists(self.file):
-                Log.debug(f"Log file not found\nCreating log file at {self.file}")
-                os.makedirs(os.path.dirname(self.file), exist_ok=True)
-                with open(self.file, "w") as file:
-                    Log.debug(f"Log file with success")
-                    file.write("") # Writing nothing to it
-                    return 0
-            else:
-                Log.debug(f"Log file found at {self.file}")
-            return 0
-
-        def write(self, message: str, level: str) -> int:
-            """Writes a message to the log file."""
-            match level:
-                case "DEBUG":
-                    self.logger.Log.debug(message)
-                case "INFO":
-                    self.logger.Log.info(message)
-                case "WARNING":
-                    self.logger.warning(message)
-                case "ERROR":
-                    self.logger.Log.error(message)
-            return 0
-
     class FuzzySearch:
         """Holds attributes and methods for the fuzzy search."""
         def __init__(self):
