@@ -188,6 +188,10 @@ class Backdrop:
             Backdrop.run_process(f"{self.cmd} {self.dir}")
             return 0
 
+        def get_wallpaper_list(self) -> list[str]:
+            """Get the wallpaper list."""
+            return os.listdir(self.dir)
+
     class Notifications:
         """Holds attributes and methods for the notifications."""
         def __init__(self):
@@ -245,8 +249,7 @@ class Backdrop:
         )
 
         parser.add_argument(
-            "-a",
-            "--add",
+            "--add", # Yes, it is verbose
             type=str,
             nargs="+", # Allows for multiple wallpapers to be added
             action="store",
@@ -254,7 +257,6 @@ class Backdrop:
         )
 
         parser.add_argument(
-            "-r",
             "--remove",
             type=str,
             nargs="+", # Allows for multiple wallpapers to be removed
@@ -263,6 +265,31 @@ class Backdrop:
         )
 
         return parser.parse_args()
+
+    class Aesthetic:
+        """Entirely aesthetics, nothing else.
+        Color usage:
+        print(f"{Backdrop.Aesthetic.colors['RED']}Hello, World!{Backdrop.Aesthetic.NC}")
+        Not using NC means that the color will be applied to all the text after it, until the next NC is found.
+        """
+        # Color codes
+        colors: Dict[str, str] = {
+            "RED": "\033[91m",
+            "GREEN": "\033[92m",
+            "YELLOW": "\033[93m",
+            "BLUE": "\033[94m",
+            "MAGENTA": "\033[95m",
+            "CYAN": "\033[96m",
+            "bold": {
+                "RED": "\033[1;91m",
+                "GREEN": "\033[1;92m",
+                "YELLOW": "\033[1;93m",
+                "BLUE": "\033[1;94m",
+                "MAGENTA": "\033[1;95m",
+                "CYAN": "\033[1;96m"
+            }
+        }
+        NC: str = "\033[0m" # No color
 
 def prompt(msg: str) -> str:
     """Prompt the user for input."""
@@ -275,6 +302,7 @@ def main() -> int:
     wallpaper = Backdrop.Wallpaper()
     notifications = Backdrop.Notifications()
     fuzzy_search = Backdrop.FuzzySearch()
+    aesthetic = Backdrop.Aesthetic()
 
     # Initialization
     # Checking if bdy.json exists
@@ -307,8 +335,7 @@ def main() -> int:
     config = JSONParser.read_file(Config.path)
 
     # Setting up the wallpaper attributes
-    wallpaper = Backdrop.Wallpaper()
-    wallpaper.dir = config["wallpaper"]["dir"]
+    wallpaper.dir = os.path.expanduser(config["wallpaper"]["dir"].rstrip('/'))
     wallpaper.cmd = config["wallpaper"]["cmd"]
 
     # Setting up the notifications attributes
@@ -323,12 +350,6 @@ def main() -> int:
         config["logging"]["level"].upper()
     )
 
-    # Testing
-    Log.debug("Testing logging")
-    Log.info("Testing logging")
-    Log.warning("Testing logging")
-    Log.error("Testing logging")
-
     # Setting up the fuzzy search attributes
     fuzzy_search.toggle = config["wallpaper"]["fzf"]["toggle"]
     fuzzy_search.cmd = config["wallpaper"]["fzf"]["cmd"]
@@ -338,10 +359,33 @@ def main() -> int:
 
     # Initial setup done
 
-    # Checking if the set argument is present
-    #if args.set:
-    #    Status.Messages.Log.debug(f"Setting wallpaper to: {args.set}")
-    #    logging.write(f"Wallpaper set to: {args.set}", "DEBUG")
+    # Handling the arguments
+    if args.set:
+        Backdrop.run_process(f"{wallpaper.cmd} {args.set}")
+        logging.debug(f"Wallpaper set to: {args.set}")
+        # TODO: Notify on wallpaper change
+        #* Make it auto, 'cause i'll forget
+    if args.list:
+        wallpaper_list: list[str] = wallpaper.get_wallpaper_list()
+        tmp = 0
+        for wallpaper in wallpaper_list:
+            # Printing every wallpaper with a different color
+            if wallpaper == "current":
+                continue
+            match tmp:
+                case 0:
+                    print(f"{aesthetic.colors['RED']}{wallpaper}{aesthetic.NC}")
+                case 1:
+                    print(f"{aesthetic.colors['GREEN']}{wallpaper}{aesthetic.NC}")
+                case 2:
+                    print(f"{aesthetic.colors['YELLOW']}{wallpaper}{aesthetic.NC}")
+                case 3:
+                    print(f"{aesthetic.colors['BLUE']}{wallpaper}{aesthetic.NC}")
+                case 4:
+                    print(f"{aesthetic.colors['MAGENTA']}{wallpaper}{aesthetic.NC}")
+                case 5:
+                    print(f"{aesthetic.colors['CYAN']}{wallpaper}{aesthetic.NC}")
+            tmp += 1
 
 if __name__ == "__main__":
     main()
