@@ -7,10 +7,6 @@ import argparse
 import json
 import os
 
-class Config:
-    """Holds attributes and methods for the config."""
-    path: str = "bdy.json"
-    debug: bool = True
 class Log:
     logger = logging.getLogger(__name__)
 
@@ -54,8 +50,63 @@ class Log:
         Log.logger.debug(msg)
         return 0
 
-    def debug(self, msg: str) -> int:
-        self.logger.debug(msg)
+class Config:
+    """Holds attributes and methods for the config."""
+    path: str = "bdy.json"
+    debug: bool = True
+
+    @staticmethod
+    def set_default_config() -> int:
+        """Writes the default config file."""
+        default: Dict = {
+            "wallpaper": {
+                "dir": "/home/$USER/Pictures/Wallpapers",  # Directory to search for wallpapers
+                "current": "/home/$USER/Pictures/Wallpapers/current",  # Current wallpaper
+                "ext": ".jpg",  # File extension of wallpapers
+                "cmd": "swaybg -i",  # Command to set the wallpaper
+                "auto_change": {
+                    "toggle": False,  # Changes whether or not the wallpaper is changed automatically
+                    "interval": 300,  # The interval of changing the wallpaper
+                    "list": [],  # A list of wallpapers to change to
+                    "random": True,  # Changes whether or not the wallpaper is chosen randomly
+                },
+                "fzf": {
+                    "toggle": False,  # Changes whether or not fzf is used to select the wallpaper
+                    "cmd": "fzf",  # The command to use to select the wallpaper
+                },
+                "wofi": {
+                    "toggle": False,  # Changes whether or not wofi is used to select the wallpaper
+                },
+                "rofi": {
+                    "toggle": False,  # Changes whether or not rofi is used to select the wallpaper
+                },
+                "dmenu": {
+                    "toggle": False,  # Changes whether or not dmenu is used to select the wallpaper
+                },
+            },
+            "notifications": {
+                "toggle": True,  # Changes whether notifications are shown at all
+                "interval": 300,  # The interval of showing the notification
+                "cmd": "notify-send",  # The command to show the notification
+                "wallpaper_change": True,  # Notify when the wallpaper is changed
+                "wallpaper_error": True,  # Notify when the wallpaper is not found
+                "wallpaper_add": True,  # Notify when a wallpaper is added
+                "wallpaper_remove": True,  # Notify when a wallpaper is removed
+            },
+            "logging": {
+                "enable": True,  # Changes whether logging is enabled
+                "file": "log/backdropy.log",  # The file to log to
+                "level": "INFO",  # The level of logging
+            }
+        }
+
+        # Writing the config in JSON format
+        try:
+            JSONParser.write_file(Config.path, default)
+        except Exception as e:
+            Log.error(f"Error writing to file: {Config.path}", str(e))
+            return 1
+
         return 0
 
 class JSONParser:
