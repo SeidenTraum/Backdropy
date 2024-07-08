@@ -1,3 +1,6 @@
+log/*
+Backnotes.md
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

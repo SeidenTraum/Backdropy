@@ -1,7 +1,7 @@
 {
     "wallpaper": {
-        "dir": "/home/$USER/Pictures/Wallpapers",
-        "current": "/home/$USER/Pictures/Wallpapers/current",
+        "dir": "~/Pictures/Wallpapers/",
+        "current": "~/Pictures/Wallpapers/current",
         "ext": ".jpg",
         "cmd": "swaybg -i",
         "auto_change": {
@@ -35,7 +35,7 @@
     },
     "logging": {
         "enable": true,
-        "file": "/var/log/backdropy.log",
-        "level": "info"
+        "file": "log/backdropy.log",
+        "level": "debug"
     }
 }
