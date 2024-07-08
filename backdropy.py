@@ -1,11 +1,54 @@
 """Backdrop is a supplement to wallpaper managers like swaybg, nitrogen, etc.
 License: GPLv3
 """
-from typing import Dict, Union
+from typing import Dict, Union, List
 import logging
 import argparse
+import random
 import json
 import os
+
+DEFAULT_CONFIG = {
+    "wallpaper": {
+        "dir": "/home/$USER/Pictures/Wallpapers",
+        "current": "/home/$USER/Pictures/Wallpapers/current",
+        "ext": ".jpg",
+        "cmd": "swaybg -i",
+        "auto_change": {
+            "toggle": False,
+            "interval": 300,
+            "list": [],
+            "random": True,
+        },
+        "fzf": {
+            "toggle": False,
+            "cmd": "fzf",
+        },
+        "wofi": {
+            "toggle": False,
+        },
+        "rofi": {
+            "toggle": False,
+        },
+        "dmenu": {
+            "toggle": False,
+        },
+    },
+    "notifications": {
+        "toggle": True,
+        "interval": 300,
+        "cmd": "notify-send",
+        "wallpaper_change": True,
+        "wallpaper_error": True,
+        "wallpaper_add": True,
+        "wallpaper_remove": True,
+    },
+    "logging": {
+        "enable": True,
+        "file": "log/backdropy.log",
+        "level": "INFO",
+    }
+}
 
 class Log:
     logger = logging.getLogger(__name__)
@@ -23,32 +66,27 @@ class Log:
             )
 
     @staticmethod
-    def info(msg: str) -> int:
+    def info(msg: str) -> None:
         Log.logger.info(msg)
-        return 0
 
     @staticmethod
-    def warning(msg: str) -> int:
+    def warning(msg: str) -> None:
         Log.logger.warning(msg)
-        return 0
 
     @staticmethod
-    def error(msg: str, errc: str = None) -> int:
+    def error(msg: str, errc: str = None) -> None:
         if errc:
             Log.logger.error(f"{msg} - {errc}")
         else:
             Log.logger.error(msg)
-        return 0
 
     @staticmethod
-    def success(msg: str) -> int:
+    def success(msg: str) -> None:
         Log.logger.info(f"[SUCCESS] {msg}")
-        return 0
 
     @staticmethod
-    def debug(msg: str) -> int:
+    def debug(msg: str) -> None:
         Log.logger.debug(msg)
-        return 0
 
 class Config:
     """Holds attributes and methods for the config."""
@@ -58,55 +96,11 @@ class Config:
     @staticmethod
     def set_default_config() -> int:
         """Writes the default config file."""
-        default: Dict = {
-            "wallpaper": {
-                "dir": "/home/$USER/Pictures/Wallpapers",  # Directory to search for wallpapers
-                "current": "/home/$USER/Pictures/Wallpapers/current",  # Current wallpaper
-                "ext": ".jpg",  # File extension of wallpapers
-                "cmd": "swaybg -i",  # Command to set the wallpaper
-                "auto_change": {
-                    "toggle": False,  # Changes whether or not the wallpaper is changed automatically
-                    "interval": 300,  # The interval of changing the wallpaper
-                    "list": [],  # A list of wallpapers to change to
-                    "random": True,  # Changes whether or not the wallpaper is chosen randomly
-                },
-                "fzf": {
-                    "toggle": False,  # Changes whether or not fzf is used to select the wallpaper
-                    "cmd": "fzf",  # The command to use to select the wallpaper
-                },
-                "wofi": {
-                    "toggle": False,  # Changes whether or not wofi is used to select the wallpaper
-                },
-                "rofi": {
-                    "toggle": False,  # Changes whether or not rofi is used to select the wallpaper
-                },
-                "dmenu": {
-                    "toggle": False,  # Changes whether or not dmenu is used to select the wallpaper
-                },
-            },
-            "notifications": {
-                "toggle": True,  # Changes whether notifications are shown at all
-                "interval": 300,  # The interval of showing the notification
-                "cmd": "notify-send",  # The command to show the notification
-                "wallpaper_change": True,  # Notify when the wallpaper is changed
-                "wallpaper_error": True,  # Notify when the wallpaper is not found
-                "wallpaper_add": True,  # Notify when a wallpaper is added
-                "wallpaper_remove": True,  # Notify when a wallpaper is removed
-            },
-            "logging": {
-                "enable": True,  # Changes whether logging is enabled
-                "file": "log/backdropy.log",  # The file to log to
-                "level": "INFO",  # The level of logging
-            }
-        }
-
-        # Writing the config in JSON format
         try:
-            JSONParser.write_file(Config.path, default)
+            JSONParser.write_file(Config.path, DEFAULT_CONFIG)
         except Exception as e:
             Log.error(f"Error writing to file: {Config.path}", str(e))
             return 1
-
         return 0
 
 class JSONParser:
@@ -137,7 +131,7 @@ class JSONParser:
             return 1
 
     @staticmethod
-    def edit_key(data: Dict, key: str, new_value: str) -> Dict:
+    def edit_key(data: Dict, key: str, new_value: Union[str, bool, int]) -> Dict:
         """Edit a key in a JSON file."""
         data[key] = new_value
         return data
@@ -161,7 +155,7 @@ class JSONParser:
         return 1
 
     @staticmethod
-    def add_key(file_path: str, key: str, value: str) -> Dict:
+    def add_key(file_path: str, key: str, value: Union[str, bool, int]) -> Dict:
         """Add a key to a JSON file."""
         data = JSONParser.read_file(file_path)
         if isinstance(data, Dict):
@@ -175,29 +169,51 @@ class Backdrop:
     class Wallpaper:
         """Holds attributes for the wallpaper."""
         def __init__(self):
-            self.name: str = None
-            self.tags: list[str] = None
-            self.dir: str = None
-            self.ext: str = None
+            self.name: str = ""
+            self.tags: List[str] = []
+            self.dir: str = ""
+            self.ext: str = ""
+            self.cmd: str = ""
 
-            self.cmd: str = None
-
-        def set_wallpaper(self) -> int:
+        def set_wallpaper(self, wallpaper: str) -> int:
             """Set the wallpaper."""
-            # Very simple implementation
-            Backdrop.run_process(f"{self.cmd} {self.dir}")
+            Backdrop.run_process(f"{self.cmd} {self.dir}/{wallpaper}")
             return 0
 
-        def get_wallpaper_list(self) -> list[str]:
+        def get_wallpaper_list(self) -> List[str]:
             """Get the wallpaper list."""
             return os.listdir(self.dir)
+
+        class Dynamic:
+            """Holds attributes and methods for the dynamic wallpaper change."""
+            def __init__(self):
+                self.toggle: bool = False
+                self.interval: int = 0
+                self.list: List[str] = []
+                self.type: str = "random" # Or linear (TBI)
+
+            def set_list(self, *args) -> List[str]:
+                """Just appends the arguments to the list, very much WIP
+                Plans:
+                    Support sorting
+                """
+                if not args:
+                    raise ValueError("No arguments provided")
+                for arg in args:
+                    self.list.append(arg)
+
+            def get_random_wallpaper(self) -> str:
+                """Get a random wallpaper."""
+                if not self.list:
+                    self.list = self.get_wallpaper_list()
+                return random.choice(self.list)
 
     class Notifications:
         """Holds attributes and methods for the notifications."""
         def __init__(self):
-            self.toggle: bool = None
-            self.interval: int = None
-            self.cmd: str = None
+            self.toggle: bool = False
+            self.interval: int = 0
+            self.cmd: str = ""
 
         def notify(self, message: str) -> int:
             """Send a notification."""
@@ -207,8 +223,8 @@ class Backdrop:
     class FuzzySearch:
         """Holds attributes and methods for the fuzzy search."""
         def __init__(self):
-            self.toggle: bool = None
-            self.cmd: str = None
+            self.toggle: bool = False
+            self.cmd: str = ""
 
     @staticmethod
     def run_process(cmd: str) -> int:
@@ -229,8 +245,7 @@ class Backdrop:
             "-s",
             "--set",
             type=str,
-            nargs=1,
-            action="store",
+            nargs='?', # Takes any ammount of args and outputs them as a single str
             help="Set the wallpaper"
         )
 
@@ -251,45 +266,27 @@ class Backdrop:
         parser.add_argument(
             "--add", # Yes, it is verbose
             type=str,
-            nargs="+", # Allows for multiple wallpapers to be added
-            action="store",
+            nargs="+",
             help="Add wallpaper(s) to the list"
         )
 
         parser.add_argument(
             "--remove",
             type=str,
-            nargs="+", # Allows for multiple wallpapers to be removed
-            action="store",
+            nargs="+",
             help="Remove wallpaper(s) from the list"
         )
 
-        return parser.parse_args()
+        parser.add_argument(
+            "-srl", # Note: I've no fuckin' clue how to accept it in any order
+            # and I'm not about to hard code every single permutation.
+            "--set-random-list",
+            type=str,
+            nargs="+",
+            help="Set the wallpaper list"
+        )
 
-    class Aesthetic:
-        """Entirely aesthetics, nothing else.
-        Color usage:
-        print(f"{Backdrop.Aesthetic.colors['RED']}Hello, World!{Backdrop.Aesthetic.NC}")
-        Not using NC means that the color will be applied to all the text after it, until the next NC is found.
-        """
-        # Color codes
-        colors: Dict[str, str] = {
-            "RED": "\033[91m",
-            "GREEN": "\033[92m",
-            "YELLOW": "\033[93m",
-            "BLUE": "\033[94m",
-            "MAGENTA": "\033[95m",
-            "CYAN": "\033[96m",
-            "bold": {
-                "RED": "\033[1;91m",
-                "GREEN": "\033[1;92m",
-                "YELLOW": "\033[1;93m",
-                "BLUE": "\033[1;94m",
-                "MAGENTA": "\033[1;95m",
-                "CYAN": "\033[1;96m"
-            }
-        }
-        NC: str = "\033[0m" # No color
+        return parser.parse_args()
 
 def prompt(msg: str) -> str:
     """Prompt the user for input."""
@@ -299,10 +296,6 @@ def prompt(msg: str) -> str:
 
 def main() -> int:
     """Main function."""
-    wallpaper = Backdrop.Wallpaper()
-    notifications = Backdrop.Notifications()
-    fuzzy_search = Backdrop.FuzzySearch()
-    aesthetic = Backdrop.Aesthetic()
 
     # Initialization
     # Checking if bdy.json exists
@@ -334,15 +327,6 @@ def main() -> int:
     # Parsing config and setting up variables
     config = JSONParser.read_file(Config.path)
 
-    # Setting up the wallpaper attributes
-    wallpaper.dir = os.path.expanduser(config["wallpaper"]["dir"].rstrip('/'))
-    wallpaper.cmd = config["wallpaper"]["cmd"]
-
-    # Setting up the notifications attributes
-    notifications.toggle = config["notifications"]["toggle"]
-    notifications.interval = config["notifications"]["interval"]
-    notifications.cmd = config["notifications"]["cmd"]
-
     # Setting up the logging attributes and initializing the logging
     Log.configure_logging(
         config["logging"]["enable"],
@@ -350,43 +334,46 @@ def main() -> int:
         config["logging"]["level"].upper()
     )
 
-    # Setting up the fuzzy search attributes
-    fuzzy_search.toggle = config["wallpaper"]["fzf"]["toggle"]
-    fuzzy_search.cmd = config["wallpaper"]["fzf"]["cmd"]
-
     # Initializing the arguments
     args = Backdrop.set_arguments()
 
-    # Initial setup done
+    wallpaper = Backdrop.Wallpaper()
+    wallpaper.dir = os.path.expanduser(config["wallpaper"]["dir"])
+    wallpaper.ext = config["wallpaper"]["ext"]
+    wallpaper.cmd = config["wallpaper"]["cmd"]
 
-    # Handling the arguments
+    aest = Backdrop.Aesthetic
+
     if args.set:
-        Backdrop.run_process(f"{wallpaper.cmd} {args.set}")
-        logging.debug(f"Wallpaper set to: {args.set}")
-        # TODO: Notify on wallpaper change
-        #* Make it auto, 'cause i'll forget
-    if args.list:
-        wallpaper_list: list[str] = wallpaper.get_wallpaper_list()
-        tmp = 0
-        for wallpaper in wallpaper_list:
-            # Printing every wallpaper with a different color
-            if wallpaper == "current":
-                continue
-            match tmp:
-                case 0:
-                    print(f"{aesthetic.colors['RED']}{wallpaper}{aesthetic.NC}")
+        wallpaper.set_wallpaper(args.set)
+    elif args.random:
+        wallpaper.set_wallpaper(wallpaper.get_random_wallpaper())
+    elif args.set_random_list:
+        wallpaper.Dynamic.set_list(args.set_random_list)
+        wallpaper.set_wallpaper(wallpaper.Dynamic.get_random_wallpaper())
+    elif args.list:
+        color: int = 0
+        list: List[str] = wallpaper.get_wallpaper_list()
+        for wallpaper in list:
+            match color:
                 case 1:
-                    print(f"{aesthetic.colors['GREEN']}{wallpaper}{aesthetic.NC}")
+                    print(f"{aest.colors['RED']}{wallpaper}{aest.NC}")
                 case 2:
-                    print(f"{aesthetic.colors['YELLOW']}{wallpaper}{aesthetic.NC}")
+                    print(f"{aest.colors['GREEN']}{wallpaper}{aest.NC}")
                 case 3:
-                    print(f"{aesthetic.colors['BLUE']}{wallpaper}{aesthetic.NC}")
+                    print(f"{aest.colors['BLUE']}{wallpaper}{aest.NC}")
                 case 4:
-                    print(f"{aesthetic.colors['MAGENTA']}{wallpaper}{aesthetic.NC}")
+                    print(f"{aest.colors['MAGENTA']}{wallpaper}{aest.NC}")
                 case 5:
-                    print(f"{aesthetic.colors['CYAN']}{wallpaper}{aesthetic.NC}")
-            tmp += 1
+                    aest.print_color(aest.colors["CYAN"], wallpaper)
+                    color = 0 # Resets iterator
+            color += 1
+    elif args.add:
+        # Add wallpapers to path
+        # WIP
+        ...
+    elif args.remove:
+        ...
 
 if __name__ == "__main__":
     main()
-
