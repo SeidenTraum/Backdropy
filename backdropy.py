@@ -175,9 +175,19 @@ class Backdrop:
             self.ext: str = ""
             self.cmd: str = ""
 
+        @staticmethod
+        def sanitize(string:str) -> str:
+            """Sanitize the string."""
+            # Replacing spaces with
+            if isinstance(string, list):
+                # Concatenating it into a single string
+                string = "-".join(string)
+            return string
+
         def set_wallpaper(self, wallpaper: str) -> int:
             """Set the wallpaper."""
-            Backdrop.run_process(f"{self.cmd} {self.dir}/{wallpaper}")
+            Backdrop.run_process(f"{self.cmd} {self.dir}{wallpaper}")
+            Log.success(f"Wallpaper set to: {wallpaper}")
             return 0
 
         def get_wallpaper_list(self) -> List[str]:
@@ -226,6 +236,24 @@ class Backdrop:
             self.toggle: bool = False
             self.cmd: str = ""
 
+    class Aesthetic:
+        """Holds attributes and methods for the aesthetic."""
+        colors: Dict[str, str] = {
+            "RED": "\033[91m",
+            "GREEN": "\033[92m",
+            "BLUE": "\033[94m",
+            "MAGENTA": "\033[95m",
+            "CYAN": "\033[96m",
+            "BOLD": {
+                "RED": "\033[1;91m",
+                "GREEN": "\033[1;92m",
+                "BLUE": "\033[1;94m",
+                "MAGENTA": "\033[1;95m",
+                "CYAN": "\033[1;96m",
+            }
+        }
+        NC: str = "\033[0m"
+
     @staticmethod
     def run_process(cmd: str) -> int:
         """Run a process."""
@@ -245,7 +273,7 @@ class Backdrop:
             "-s",
             "--set",
             type=str,
-            nargs='?', # Takes any ammount of args and outputs them as a single str
+            nargs='*', # Takes any ammount of args and outputs them as a single str
             help="Set the wallpaper"
         )
 
@@ -345,12 +373,15 @@ def main() -> int:
     aest = Backdrop.Aesthetic
 
     if args.set:
-        wallpaper.set_wallpaper(args.set)
+        wallpaper.set_wallpaper(wallpaper.sanitize(args.set).lower())
     elif args.random:
-        wallpaper.set_wallpaper(wallpaper.get_random_wallpaper())
+        wallpaper.set_wallpaper(wallpaper.Dynamic.get_random_wallpaper().lower())
     elif args.set_random_list:
         wallpaper.Dynamic.set_list(args.set_random_list)
         wallpaper.set_wallpaper(wallpaper.Dynamic.get_random_wallpaper())
+        Log.success(f"List updated")
+        #! Plan on writing it to the bdy.json
+        # Soon enough
     elif args.list:
         color: int = 0
         list: List[str] = wallpaper.get_wallpaper_list()
@@ -365,7 +396,7 @@ def main() -> int:
                 case 4:
                     print(f"{aest.colors['MAGENTA']}{wallpaper}{aest.NC}")
                 case 5:
-                    aest.print_color(aest.colors["CYAN"], wallpaper)
+                    print(f"{aest.colors['CYAN']}{wallpaper}{aest.NC}")
                     color = 0 # Resets iterator
             color += 1
     elif args.add:
